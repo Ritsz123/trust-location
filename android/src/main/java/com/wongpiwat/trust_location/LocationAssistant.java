@@ -40,6 +40,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -50,6 +51,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 /**
  * A helper class that monitors the available location info on behalf of a requesting activity or application.
@@ -491,8 +493,18 @@ public class LocationAssistant
         if (!googleApiClient.isConnected() || !permissionGranted || !locationRequested || !locationStatusOk)
             return;
         try {
-            Location location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-            onLocationChanged(location);
+//            Location location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
+//            onLocationChanged(location);
+
+            LocationServices.getFusedLocationProviderClient(context).getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+                        onLocationChanged(location);
+                    }
+                }
+            });
+
         } catch (SecurityException e) {
             if (!quiet)
                 Log.e(getClass().getSimpleName(), "Error while requesting last location:\n " +
@@ -694,11 +706,11 @@ public class LocationAssistant
         if (verbose && !quiet)
             //Log.i(getClass().getSimpleName(), location.toString() + (plausible ? " -> plausible" : " -> not plausible"));
 
-        if (!allowMockLocations && !plausible) {
-            if (listener != null) listener.onMockLocationsDetected(onGoToDevSettingsFromView,
-                    onGoToDevSettingsFromDialog);
-            return;
-        }
+            if (!allowMockLocations && !plausible) {
+                if (listener != null) listener.onMockLocationsDetected(onGoToDevSettingsFromView,
+                        onGoToDevSettingsFromDialog);
+                return;
+            }
 
         bestLocation = location;
         if (listener != null)
